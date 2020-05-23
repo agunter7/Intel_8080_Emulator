@@ -37,8 +37,15 @@ int main(int argc, char **argv)
     state->memory[0x0170] = 0x07;
 
     // Run test
-    while(state->pc < ROM_LIMIT_8080){
+    bool testIncomplete = true;
+    uint16_t lastPC = 0xffff;
+    while(testIncomplete){
         executeNextInstruction(state);
+        if(state->pc == lastPC){
+            // Test complete when the program counter stalls
+            testIncomplete = false;
+        }
+        lastPC = state->pc;
     }
     return 0;
 }

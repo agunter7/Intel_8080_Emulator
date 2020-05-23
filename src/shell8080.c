@@ -7,7 +7,9 @@
 #include "../src/cpuStructures.h"
 #include "../src/helpers.h"
 
-#define DEBUG 0
+#define DEBUG 1
+#define LOAD_ROM 0
+#define CPU_DIAG 1
 
 // Global variable definitions and function prototypes
 char instructions[256][20];
@@ -26,18 +28,20 @@ State8080 *initializeCPU()
     uint8_t *romBuffer;  // Buffer for storing bytes read from Space Invaders ROM
     initializeGlobals();
 
-    // Open Space Invaders ROM file as binary-read-only and store contents in a buffer
-    FILE *invadersFile = fopen("resources/invaders", "rb");
-    if(invadersFile == NULL){
-        logger("Failed to open Space Invaders ROM.\n");
-        return NULL;
+    if(LOAD_ROM){
+        // Open Space Invaders ROM file as binary-read-only and store contents in a buffer
+        FILE *romFile = fopen("", "rb");  // Replace null string with ROM path
+        if(romFile == NULL){
+            logger("Failed to open ROM.\n");
+            return NULL;
+        }
+        romBuffer = getRomBuffer(romFile);
     }
-    romBuffer = getRomBuffer(invadersFile);
 
     // Initialize an 8080 state variable
     State8080 *state = mallocSet(sizeof(State8080));
 
-    state->memory = mallocSet(MEMORY_SIZE_8080);  // Intel 8080 uses 16-bit byte-addressable memory, 2^16=65536
+    state->memory = mallocSet(MEMORY_SIZE_8080);
     ConditionCodes cc = {0};
     state->flags = cc;
     state->inputBuffers = mallocSet(NUM_INPUT_DEVICES);
@@ -54,10 +58,12 @@ State8080 *initializeCPU()
     state->cyclesCompleted = 0;
     state->interruptsEnabled = 0;
 
-    // Place ROM buffer data into CPU memory
-    memcpy(state->memory, romBuffer, ROM_LIMIT_8080);
+    if(LOAD_ROM){
+        // Place ROM buffer data into CPU memory
+        memcpy(state->memory, romBuffer, ROM_LIMIT_8080);
+        free(romBuffer);
+    }
 
-    free(romBuffer);
     return state;
 }
 
